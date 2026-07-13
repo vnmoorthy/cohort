@@ -229,7 +229,7 @@ export default function Page() {
       const r = await fetch('/api/approve', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ approvalId: analysis.approval.id, decision, note: decision === 'approved' ? 'Approved — activate optimized site plan.' : 'Rejected — revise plan.' }),
+        body: JSON.stringify({ approvalId: analysis.approval.id, nctId: analysis.protocol.nctId, decision, note: decision === 'approved' ? 'Approved — activate optimized site plan.' : 'Rejected — revise plan.' }),
       });
       const d = await r.json();
       if (!d.error) {

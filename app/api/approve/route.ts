@@ -1,6 +1,7 @@
 import { band, hydra, insforge } from '@/lib/sponsors';
 import { crew } from '@/lib/identity';
 import { getApproval } from '@/lib/store';
+import { analyzeTrial } from '@/lib/analyze';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,11 +10,18 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const approvalId: string = (body.approvalId || '').toString();
+    let approvalId: string = (body.approvalId || '').toString();
+    const nctId: string = (body.nctId || '').toString().toUpperCase();
     const decision: 'approved' | 'rejected' = body.decision === 'rejected' ? 'rejected' : 'approved';
     const note: string | undefined = body.note ? String(body.note) : undefined;
 
-    const existing = getApproval(approvalId);
+    let existing = getApproval(approvalId);
+    // Cold serverless instance: recreate the pending approval for this trial, then sign it.
+    if (!existing && nctId) {
+      const a = await analyzeTrial(nctId);
+      approvalId = a.approval?.id || approvalId;
+      existing = getApproval(approvalId);
+    }
     if (!existing) return Response.json({ error: 'Approval request not found.' }, { status: 404 });
 
     const resolved = band.resolveApproval(approvalId, decision, note);

@@ -1,5 +1,6 @@
 import { runForecast } from '@/lib/forecast';
 import { insforge } from '@/lib/sponsors';
+import { analyzeTrial } from '@/lib/analyze';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,9 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const nctId: string = (body.nctId || '').toString().toUpperCase();
     const selectedSiteIds: string[] = Array.isArray(body.selectedSiteIds) ? body.selectedSiteIds : [];
-    const analysis = insforge.loadAnalysis(nctId);
+    // Re-analyze on a cache miss (cold serverless instance) — deterministic, so
+    // the site set is identical to the original analysis.
+    const analysis = insforge.loadAnalysis(nctId) || (nctId ? await analyzeTrial(nctId) : undefined);
     if (!analysis) return Response.json({ error: 'Trial not analyzed yet. Run analysis first.' }, { status: 404 });
 
     const target = Math.max(1, Math.round(Number(body.target) || analysis.optimize.optimized.forecast.target));

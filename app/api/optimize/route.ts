@@ -1,6 +1,7 @@
 import { optimizePortfolio } from '@/lib/optimize';
 import { insforge, hydra } from '@/lib/sponsors';
 import { crew } from '@/lib/identity';
+import { analyzeTrial } from '@/lib/analyze';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const nctId: string = (body.nctId || '').toString().toUpperCase();
-    const analysis = insforge.loadAnalysis(nctId);
+    const analysis = insforge.loadAnalysis(nctId) || (nctId ? await analyzeTrial(nctId) : undefined);
     if (!analysis) return Response.json({ error: 'Trial not analyzed yet. Run analysis first.' }, { status: 404 });
 
     const target = Math.max(1, Math.round(Number(body.target) || analysis.optimize.optimized.forecast.target));
