@@ -8,10 +8,11 @@
 import { fetchTrial } from './ctgov';
 import { scoreSites } from './sitescore';
 import { optimizePortfolio } from './optimize';
-import { crew, allIdentities } from './identity';
+import { crew, allIdentities, fromBand } from './identity';
 import { sponsorStatuses, youcom, nimble, hydra, band, insforge } from './sponsors';
+import * as bandLive from './sponsors/band-live';
 import { resetAudit } from './store';
-import type { TrialAnalysis, Landscape } from './types';
+import type { TrialAnalysis, Landscape, BandCoordination } from './types';
 
 export interface AnalyzeOptions {
   target?: number;
@@ -102,14 +103,38 @@ export async function analyzeTrial(nctId: string, opts: AnalyzeOptions = {}): Pr
     `Requested human sign-off from ${actors.manager.handle} via ${approval.channel === 'band' ? 'BAND' : 'BAND (local fallback)'}.`,
   );
 
+  // 6. Coordinate the crew on BAND (real agent identities + a shared room with a
+  //    human sign-off request). Guarded — BAND issues never break the analysis.
+  let bandCoord: BandCoordination | null = null;
+  let identities = allIdentities();
+  if (bandLive.isLive()) {
+    try {
+      bandCoord = await bandLive.coordinateTrial(protocol.nctId, protocol, optimize);
+      if (bandCoord?.live && bandCoord.agents.length) {
+        identities = bandCoord.agents.map(fromBand);
+        hydra.record(
+          protocol.nctId,
+          actors.optimizer,
+          'band.coordinated',
+          'band',
+          bandCoord.roomId || protocol.nctId,
+          `Crew coordinated on BAND — ${bandCoord.agents.length} verified agents, ${bandCoord.posted} events in "${bandCoord.roomTitle}".`,
+        );
+      }
+    } catch {
+      bandCoord = null;
+    }
+  }
+
   const analysis: TrialAnalysis = {
     protocol,
     scoredSites,
     landscape,
-    identities: allIdentities(),
+    identities,
     optimize,
     sponsors: sponsorStatuses(),
     approval,
+    band: bandCoord,
   };
   insforge.persistAnalysis(analysis);
   return analysis;

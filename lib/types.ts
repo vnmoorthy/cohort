@@ -176,6 +176,23 @@ export interface SponsorStatus {
   prize: boolean;
 }
 
+export interface BandAgentRef {
+  role: string;
+  name: string;
+  handle: string;
+  id: string;
+}
+
+export interface BandCoordination {
+  live: boolean;
+  roomId?: string;
+  roomTitle?: string;
+  roomUrl?: string;
+  agents: BandAgentRef[];
+  posted: number; // events/messages posted to the room
+  note?: string;
+}
+
 export interface TrialAnalysis {
   protocol: TrialProtocol;
   scoredSites: ScoredSite[];
@@ -184,4 +201,5 @@ export interface TrialAnalysis {
   optimize: OptimizeResult;
   sponsors: SponsorStatus[];
   approval?: ApprovalRequest | null;
+  band?: BandCoordination | null;
 }

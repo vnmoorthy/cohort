@@ -368,6 +368,13 @@ export default function Page() {
               <IdentityPanel analysis={analysis} />
             </div>
 
+            {analysis.band?.live && (
+              <>
+                <div className="section-label">Agent coordination · live on BAND</div>
+                <BandPanel band={analysis.band} />
+              </>
+            )}
+
             <div className="section-label">Human sign-off · governed by BAND</div>
             <div className="grid cols-2">
               <ApprovalCard analysis={analysis} onApprove={approve} busy={approving} />
@@ -617,10 +624,12 @@ function LandscapePanel({ analysis }: { analysis: TrialAnalysis }) {
 }
 
 function IdentityPanel({ analysis }: { analysis: TrialAnalysis }) {
+  const issuer = analysis.identities[0]?.issuer || 'dmv.agent';
+  const viaBand = issuer === 'band.ai';
   return (
     <div className="panel">
       <div className="panel-head">
-        <div className="panel-title">Actors · <b>verified .agent identities</b></div>
+        <div className="panel-title">Actors · <b>{viaBand ? 'verified BAND identities' : 'verified .agent identities'}</b></div>
       </div>
       <div className="id-list">
         {analysis.identities.map((id) => (
@@ -630,12 +639,42 @@ function IdentityPanel({ analysis }: { analysis: TrialAnalysis }) {
               <div className="id-handle">{id.handle}</div>
               <div className="id-role">{id.role}</div>
             </div>
-            <div className="verified">✓ verified</div>
+            <div className="verified">✓ {viaBand ? 'BAND' : 'verified'}</div>
           </div>
         ))}
       </div>
       <div className="notice" style={{ fontSize: 11.5, marginTop: 10 }}>
-        Every audit event is signed to one of these identities — the attribution regulators require (21 CFR Part 11), issued by the .agent registry.
+        Every audit event is signed to one of these identities — the attribution regulators require (21 CFR Part 11), issued by {viaBand ? 'BAND (band.ai)' : 'the .agent registry'}.
+      </div>
+    </div>
+  );
+}
+
+function BandPanel({ band }: { band: NonNullable<TrialAnalysis['band']> }) {
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <div className="panel-title">BAND room · <b>{band.roomTitle}</b></div>
+        <a className="chip live" href={band.roomUrl} target="_blank" rel="noreferrer">open in BAND ↗</a>
+      </div>
+      <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div className="stat"><span className="n tabular">{band.agents.length}</span><span className="l">agents registered on BAND</span></div>
+        <div className="stat"><span className="n tabular amber">{band.posted}</span><span className="l">events + messages posted</span></div>
+      </div>
+      <div className="id-list">
+        {band.agents.map((a) => (
+          <div className="id-row" key={a.id}>
+            <div className={`id-avatar ${a.role === 'manager' ? 'human' : 'agent'}`}>{a.role === 'manager' ? '☺' : '⬡'}</div>
+            <div style={{ minWidth: 0 }}>
+              <div className="id-handle">{a.handle}</div>
+              <div className="id-role">{a.name}</div>
+            </div>
+            <div className="verified">✓ BAND</div>
+          </div>
+        ))}
+      </div>
+      <div className="notice" style={{ fontSize: 11.5, marginTop: 10 }}>
+        A real BAND room: the crew coordinates and posts a human sign-off request — persistent agent identity + multi-agent coordination + human-in-the-loop, on BAND.
       </div>
     </div>
   );

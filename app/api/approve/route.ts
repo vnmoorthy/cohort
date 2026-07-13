@@ -1,4 +1,5 @@
 import { band, hydra, insforge } from '@/lib/sponsors';
+import * as bandLive from '@/lib/sponsors/band-live';
 import { crew } from '@/lib/identity';
 import { getApproval } from '@/lib/store';
 import { analyzeTrial } from '@/lib/analyze';
@@ -39,12 +40,13 @@ export async function POST(req: Request) {
         : `Study manager REJECTED the plan${note ? ` — "${note}"` : '.'}`,
     );
 
-    // reflect status on the stored analysis
+    // reflect status on the stored analysis + post the decision back to BAND
     const analysis = insforge.loadAnalysis(resolved.nctId);
     if (analysis) {
       analysis.approval = resolved;
       insforge.persistAnalysis(analysis);
     }
+    bandLive.postDecision(resolved.nctId, decision === 'approved').catch(() => {});
 
     const integrity = hydra.integrity(resolved.nctId);
     return Response.json({ approval: resolved, integrity });
