@@ -38,6 +38,13 @@ export function sponsorStatuses(): SponsorStatus[] {
       prize: true,
     },
     {
+      key: 'agentos',
+      name: 'AgentOS · AgentHog',
+      role: 'Agent-run observability & tracing',
+      live: !!process.env.AGENTOS_API_KEY,
+      prize: false,
+    },
+    {
       key: 'insforge',
       name: 'InsForge',
       role: 'Agent-native backend — persistence & hosting',

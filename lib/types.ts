@@ -193,6 +193,13 @@ export interface BandCoordination {
   note?: string;
 }
 
+export interface AgentHogTrace {
+  live: boolean;
+  traceId?: string;
+  url?: string;
+  spans?: number;
+}
+
 export interface TrialAnalysis {
   protocol: TrialProtocol;
   scoredSites: ScoredSite[];
@@ -202,4 +209,5 @@ export interface TrialAnalysis {
   sponsors: SponsorStatus[];
   approval?: ApprovalRequest | null;
   band?: BandCoordination | null;
+  agenthog?: AgentHogTrace | null;
 }

@@ -11,8 +11,9 @@ import { optimizePortfolio } from './optimize';
 import { crew, allIdentities, fromBand } from './identity';
 import { sponsorStatuses, youcom, nimble, hydra, band, insforge } from './sponsors';
 import * as bandLive from './sponsors/band-live';
+import * as agenthog from './sponsors/agenthog';
 import { resetAudit } from './store';
-import type { TrialAnalysis, Landscape, BandCoordination } from './types';
+import type { TrialAnalysis, Landscape, BandCoordination, AgentHogTrace } from './types';
 
 export interface AnalyzeOptions {
   target?: number;
@@ -126,6 +127,26 @@ export async function analyzeTrial(nctId: string, opts: AnalyzeOptions = {}): Pr
     }
   }
 
+  // 7. Emit an observability trace of the crew run to AgentOS / AgentHog.
+  let agenthogTrace: AgentHogTrace | null = null;
+  if (agenthog.isLive()) {
+    try {
+      agenthogTrace = await agenthog.traceAnalysis(protocol, landscape, optimize);
+      if (agenthogTrace?.traceId) {
+        hydra.record(
+          protocol.nctId,
+          actors.forecaster,
+          'trace.recorded',
+          'observability',
+          agenthogTrace.traceId,
+          `Crew run traced to AgentOS / AgentHog — ${agenthogTrace.spans} spans, viewable at app.theagentos.space.`,
+        );
+      }
+    } catch {
+      agenthogTrace = null;
+    }
+  }
+
   const analysis: TrialAnalysis = {
     protocol,
     scoredSites,
@@ -135,6 +156,7 @@ export async function analyzeTrial(nctId: string, opts: AnalyzeOptions = {}): Pr
     sponsors: sponsorStatuses(),
     approval,
     band: bandCoord,
+    agenthog: agenthogTrace,
   };
   insforge.persistAnalysis(analysis);
   return analysis;

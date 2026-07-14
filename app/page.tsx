@@ -382,7 +382,7 @@ export default function Page() {
             </div>
 
             <div className="section-label">Audit trail · every decision, attributed &amp; tamper-evident</div>
-            <AuditPanel events={audit} integrity={integrity} live={sponsors.find((s) => s.key === 'hydra')?.live || false} />
+            <AuditPanel events={audit} integrity={integrity} live={sponsors.find((s) => s.key === 'hydra')?.live || false} agenthog={analysis.agenthog} />
           </div>
         )}
 
@@ -727,16 +727,23 @@ function ApprovalCard({ analysis, onApprove, busy }: { analysis: TrialAnalysis; 
   );
 }
 
-function AuditPanel({ events, integrity, live }: { events: AuditEvent[]; integrity: { valid: boolean; length: number } | null; live: boolean }) {
+function AuditPanel({ events, integrity, live, agenthog }: { events: AuditEvent[]; integrity: { valid: boolean; length: number } | null; live: boolean; agenthog?: TrialAnalysis['agenthog'] }) {
   return (
     <div className="panel">
       <div className="panel-head">
         <div className="panel-title">Hydra ledger · <b>{events.length} events</b> · {live ? 'live' : 'local hash-chain'}</div>
-        {integrity && (
-          <span className={`integrity ${integrity.valid ? 'ok' : 'bad'}`}>
-            {integrity.valid ? '✓ chain intact' : '✕ tampered'}
-          </span>
-        )}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {agenthog?.live && agenthog.traceId && (
+            <a className="chip live" href={agenthog.url} target="_blank" rel="noreferrer" title="Crew run traced on AgentOS / AgentHog">
+              AgentHog · {agenthog.spans} spans ↗
+            </a>
+          )}
+          {integrity && (
+            <span className={`integrity ${integrity.valid ? 'ok' : 'bad'}`}>
+              {integrity.valid ? '✓ chain intact' : '✕ tampered'}
+            </span>
+          )}
+        </div>
       </div>
       <div className="audit-list">
         {events.map((e, i) => (
